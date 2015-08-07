@@ -77,7 +77,7 @@ class Checker(ast.NodeVisitor):
 
     def visit_Call(self, node):
         function_name = stringify(node.func)
-        if function_name.lower() in ('session.execute', 'cursor.execute'):
+        if function_name.lower() in ('session.execute', 'cursor.execute', 'conn.execute', 'trans.execute', 'pg.execute', 'db.execute'):
             node.args[0].parent = node
             node_error = self.check_execute(node.args[0])
             if node_error:
@@ -122,6 +122,7 @@ def main():
         epilog='Exit status is 0 if all files are okay, 1 if any files have an error. Errors are printed to stdout'
     )
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
+    parser.add_argument('--ci', action='store', required=False)
     parser.add_argument('files', nargs='+', help='Files to check')
     args = parser.parse_args()
 
@@ -133,7 +134,12 @@ def main():
             errors.extend(these_errors)
     if errors:
         print '%d total errors' % len(errors)
-        return 1
+        if args.ci:
+            print "CI build"
+            return 0
+        else:
+            print "Pre-commit Checks"
+            return 1
     else:
         return 0
 
