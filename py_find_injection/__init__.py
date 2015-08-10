@@ -122,7 +122,6 @@ def main():
         epilog='Exit status is 0 if all files are okay, 1 if any files have an error. Errors are printed to stdout'
     )
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
-    parser.add_argument('--ci', action='store', required=False)
     parser.add_argument('files', nargs='+', help='Files to check')
     args = parser.parse_args()
 
@@ -134,11 +133,7 @@ def main():
             errors.extend(these_errors)
     if errors:
         print '%d total errors' % len(errors)
-        if args.ci:
-            return 0
-        else:
-            print "More info at https://github.com/DataDog/devops/wiki/Preventing-SQL-Injections."
-            return 1
+        return 1
     else:
         return 0
 
