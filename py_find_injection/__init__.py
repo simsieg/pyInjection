@@ -135,10 +135,9 @@ def main():
     if errors:
         print '%d total errors' % len(errors)
         if args.ci:
-            print "CI build"
             return 0
         else:
-            print "Pre-commit Checks"
+            print "More info at https://github.com/DataDog/devops/wiki/Preventing-SQL-Injections."
             return 1
     else:
         return 0
