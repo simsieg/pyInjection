@@ -5,7 +5,7 @@ import ast
 import sys
 
 version_info = (0, 1, 1)
-__version__ = '.'.join(map(str, version_info))
+__version__ = '0.1.1+dd.2'
 
 
 def stringify(node):
@@ -78,10 +78,13 @@ class Checker(ast.NodeVisitor):
     def visit_Call(self, node):
         function_name = stringify(node.func)
         if function_name.lower() in ('session.execute', 'cursor.execute', 'conn.execute', 'trans.execute', 'pg.execute', 'db.execute'):
-            node.args[0].parent = node
-            node_error = self.check_execute(node.args[0])
-            if node_error:
-                self.errors.append(node_error)
+            try:
+                node.args[0].parent = node
+                node_error = self.check_execute(node.args[0])
+                if node_error:
+                    self.errors.append(node_error)
+            except IndexError:
+                pass
         elif function_name.lower() == 'eval':
             self.errors.append(IllegalLine('eval() is just generally evil', node, self.filename))
         self.generic_visit(node)
