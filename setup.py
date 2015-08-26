@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="py-find-injection",
-    version="0.1.1+dd.2",
+    version="0.1.1+dd.3",
     author="James Brown",
     author_email="jbrown@uber.com",
     url="https://github.com/uber/py-find-injection",
