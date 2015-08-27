@@ -5,7 +5,7 @@ import ast
 import sys
 
 version_info = (0, 1, 1)
-__version__ = '0.1.1+dd.3'
+__version__ = '0.1.1+dd.4'
 
 
 def stringify(node):
@@ -77,7 +77,8 @@ class Checker(ast.NodeVisitor):
 
     def visit_Call(self, node):
         function_name = stringify(node.func)
-        if '.execute' in function_name.lower():
+        # catch and check aliases of session.execute and cursor.execute
+        if function_name.lower().endswith('.execute'):
             try:
                 node.args[0].parent = node
                 node_error = self.check_execute(node.args[0])
