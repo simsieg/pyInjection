@@ -4,9 +4,8 @@ import argparse
 import ast
 import sys
 
-version_info = (0, 1, 1)
-__version__ = '0.1.1+dd.4'
-
+version_info = (0, 1, 2)
+__version__ = '.'.join(map(str, version_info))
 
 def stringify(node):
     if isinstance(node, ast.Name):
