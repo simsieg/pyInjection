@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 import argparse
 import ast
 import sys
 
+
 version_info = (0, 1, 2)
 __version__ = '.'.join(map(str, version_info))
+
 
 def stringify(node):
     if isinstance(node, ast.Name):
@@ -61,9 +65,9 @@ class Checker(ast.NodeVisitor):
     def check_execute(self, node):
         if isinstance(node, ast.BinOp):
             if isinstance(node.op, ast.Mod):
-                return IllegalLine('string interpolation of SQL query', node, self.filename)
+                return IllegalLine('String interpolation of SQL query', node, self.filename)
             elif isinstance(node.op, ast.Add):
-                return IllegalLine('string concatenation of SQL query', node, self.filename)
+                return IllegalLine('String concatenation of SQL query', node, self.filename)
         elif isinstance(node, ast.Call):
             if isinstance(node.func, ast.Attribute):
                 if node.func.attr == 'format':
@@ -86,7 +90,7 @@ class Checker(ast.NodeVisitor):
             except IndexError:
                 pass
         elif function_name.lower() == 'eval':
-            self.errors.append(IllegalLine('eval() is just generally evil', node, self.filename))
+            self.errors.append(IllegalLine('eval() is generally dangerous', node, self.filename))
         self.generic_visit(node)
 
     def visit(self, node):
@@ -132,10 +136,10 @@ def main():
     for fname in args.files:
         these_errors = check(fname)
         if these_errors:
-            print '\n'.join(str(e) for e in these_errors)
+            print('\n'.join(str(e) for e in these_errors))
             errors.extend(these_errors)
     if errors:
-        print '%d total errors' % len(errors)
+        print('%d total errors' % len(errors), file=sys.stderr)
         return 1
     else:
         return 0
