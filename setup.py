@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pyInjection",
-    version="0.1.3",
+    version="0.1.4",
     author="James Brown",
     author_email="jbrown@uber.com",
     url="https://github.com/simsieg/pyInjection",

@@ -6,7 +6,7 @@ import ast
 import sys
 import fileinput
 import json
-version_info = (0, 1, 3)
+version_info = (0, 1, 4)
 __version__ = '.'.join(map(str, version_info))
 
 
@@ -133,6 +133,7 @@ def create_parser():
     )
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
     parser.add_argument('files', nargs='*', help='files to check or \'-\' for standard in')
+    parser.add_argument('-i', '--input', help='path to a file containing a list of files to check, each file in a line')
     parser.add_argument('-j', '--json', action='store_true', help='print output in JSON')
     parser.add_argument('-s', '--stdin', action='store_true', help='read from standard in, passed files are ignored')
     parser.add_argument('-q', '--quiet', action='store_true', help='do not print error statistics')
@@ -144,8 +145,11 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
 
-    if not (args.files or args.stdin):
+    if not (args.files or args.stdin or args.input):
         parser.error('incorrect number of arguments')
+    if args.input:
+        args.files = map(lambda x: x.strip('\n'),
+            open(args.input, 'r').readlines())
     if args.stdin:
         args.files = ['-']
 
