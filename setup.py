@@ -2,11 +2,11 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name="py-find-injection",
-    version="0.1.2",
+    name="pyInjection",
+    version="0.1.3",
     author="James Brown",
     author_email="jbrown@uber.com",
-    url="https://github.com/uber/py-find-injection",
+    url="https://github.com/simsieg/pyInjection",
     description="simple python ast consumer which searches for common SQL injection attacks",
     license='MIT (Expat)',
     classifiers=[
@@ -22,12 +22,12 @@ setup(
     packages=find_packages(exclude=["tests"]),
     entry_points={
         "console_scripts": [
-            "py-find-injection = py_find_injection:main",
+            "pyInjection = pyInjection:main",
         ]
     },
     tests_require=["nose==1.3.0", "mock==1.0.1"],
     test_suite="nose.collector",
-    long_description="""py_find_injection
+    long_description="pyInjection"
 
 Walks the AST and looks for arguments to cursor.execute or session.execute; then
 determines whether string interpolation, concatenation or the .format() call is used

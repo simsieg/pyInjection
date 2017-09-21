@@ -2,12 +2,11 @@
 
 from __future__ import print_function
 
-import argparse
 import ast
 import sys
-
-
-version_info = (0, 1, 2)
+import fileinput
+import json
+version_info = (0, 1, 3)
 __version__ = '.'.join(map(str, version_info))
 
 
@@ -36,6 +35,9 @@ class IllegalLine(object):
         self.lineno = node.lineno
         self.filename = filename
         self.node = node
+
+    def toDict(self):
+        return {'file': self.filename, 'line': self.lineno, 'message': self.reason}
 
     def __str__(self):
         return "%s:%d\t%s" % (self.filename, self.lineno, self.reason)
@@ -73,14 +75,12 @@ class Checker(ast.NodeVisitor):
                 if node.func.attr == 'format':
                     return IllegalLine('str.format called on SQL query', node, self.filename)
         elif isinstance(node, ast.Name):
-            # now we need to figure out where that query is assigned. blargh.
             assignment = find_assignment_in_context(node.id, node)
             if assignment is not None:
                 return self.check_execute(assignment.value)
 
     def visit_Call(self, node):
         function_name = stringify(node.func)
-        # catch and check aliases of session.execute and cursor.execute
         if function_name.lower().endswith('.execute'):
             try:
                 node.args[0].parent = node
@@ -94,13 +94,11 @@ class Checker(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit(self, node):
-        """Visit a node."""
         method = 'visit_' + node.__class__.__name__
         visitor = getattr(self, method, self.generic_visit)
         return visitor(node)
 
     def generic_visit(self, node):
-        """Called if no explicit visitor function exists for a node."""
         for field, value in ast.iter_fields(node):
             if isinstance(value, list):
                 for item in value:
@@ -112,34 +110,56 @@ class Checker(ast.NodeVisitor):
                 self.visit(value)
 
 
-def check(filename):
+def check(filename, args):
     c = Checker(filename=filename)
-    with open(filename, 'r') as fobj:
-        try:
-            parsed = ast.parse(fobj.read(), filename)
-            c.visit(parsed)
-        except Exception:
-            raise
+    if filename == '-':
+        fobj = sys.stdin
+    else:
+        fobj = open(filename, 'r')
+
+    try:
+        parsed = ast.parse(fobj.read(), filename)
+        c.visit(parsed)
+    except Exception:
+        raise
     return c.errors
 
 
-def main():
+def create_parser():
+    import argparse
     parser = argparse.ArgumentParser(
-        description='Look for patterns in python source files that might indicate SQL injection vulnerabilities',
-        epilog='Exit status is 0 if all files are okay, 1 if any files have an error. Errors are printed to stdout'
+        description='Look for patterns in python source files that might indicate SQL injection or other vulnerabilities',
+        epilog='Exit status is 0 if all files are okay, 1 if any files have an error. Found vulnerabilities are printed to standard out'
     )
-    parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
-    parser.add_argument('files', nargs='+', help='Files to check')
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
+    parser.add_argument('files', nargs='*', help='files to check or \'-\' for standard in')
+    parser.add_argument('-j', '--json', action='store_true', help='print output in JSON')
+    parser.add_argument('-s', '--stdin', action='store_true', help='read from standard in, passed files are ignored')
+    parser.add_argument('-q', '--quiet', action='store_true', help='do not print error statistics')
+
+    return parser
+
+
+def main():
+    parser = create_parser()
     args = parser.parse_args()
+
+    if not (args.files or args.stdin):
+        parser.error('incorrect number of arguments')
+    if args.stdin:
+        args.files = ['-']
 
     errors = []
     for fname in args.files:
-        these_errors = check(fname)
-        if these_errors:
-            print('\n'.join(str(e) for e in these_errors))
-            errors.extend(these_errors)
+        errors.extend(check(fname, args))
     if errors:
-        print('%d total errors' % len(errors), file=sys.stderr)
+        if args.json:
+            print(json.dumps(map(lambda x: x.toDict(), errors),
+                indent=2, sort_keys=True))
+        else:
+            print('\n'.join(str(e) for e in errors))
+        if not args.quiet:
+            print('Total errors: %d' % len(errors), file=sys.stderr)
         return 1
     else:
         return 0
